@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="choose_download.css" />
+</head>
+
+<body>
+	<div id="popup-content">
+		<div>
+			<input type="checkbox" id="video" name="video">
+			<label for="video">Video</label>
+		</div>
+		<div>
+			<input type="checkbox" id="audio" name="audio">
+			<label for="audio">Audio</label>
+		</div>
+		<div>
+			<input type="checkbox" id="slides" name="slides">
+			<label for="slides">Slides</label>
+		</div>
+		<div class="button download download-selected">Download Selected</div>
+		<hr>
+		<div class="button download download-slides-audio">Download Audio And Slides</div>
+		<div class="button download download-video-audio">Download Audio And Video</div>
+		<div id="here"></div>
+	</div>
+	<div id="error-content" class="hidden">
+		<p>Can't beastify this web page.</p>
+		<p>Try a different page.</p>
+	</div>
+	<script type="module" src="choose_download.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,22 @@
+{
+	"manifest_version": 2,
+	"name": "Courses BBB Downloader",
+	"version": "1.0",
+	"description": "Allows downloading lectures from Courses BBB at FINKI",
+	"homepage_url": "https://anton31kah.github.io/",
+	"icons": {
+		"48": "icons/download-icon-48.png"
+	},
+	"permissions": [
+		"activeTab",
+		"tabs"
+	],
+	"browser_action": {
+		"default_icon": "icons/download-icon-32.png",
+		"default_title": "Courses BBB Downloader",
+		"default_popup": "popup/choose_download.html"
+	},
+	"web_accessible_resources": [
+		"resources/create_lecture.ps1"
+	]
+}
