@@ -23,3 +23,9 @@
 		- Note: this option is very slow (it took me an hour and a half to process a 90 minute lecture)
 	- One of the previous two options is mandatory, both are not allowed at the same time.
 	- `-deleteRest`: optional. Deletes the other unnecessary files except for the script, you'll have to delete that one on your own.
+
+## Download
+- For Firefox you can download the extension from [the releases page](https://github.com/anton31kah/Courses-BBB-Downloader/releases/download/v1.0/courses_bbb_downloader-1.0-fx.xpi).
+
+## FFmpeg
+- The project uses ffmpeg and ffprobe which you can download from [the official page](https://www.ffmpeg.org/download.html).
