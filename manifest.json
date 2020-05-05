@@ -9,14 +9,12 @@
 	},
 	"permissions": [
 		"activeTab",
-		"tabs"
+		"tabs",
+		"*://raw.githubusercontent.com/*"
 	],
 	"browser_action": {
 		"default_icon": "icons/download-icon-32.png",
 		"default_title": "Courses BBB Downloader",
 		"default_popup": "popup/choose_download.html"
-	},
-	"web_accessible_resources": [
-		"resources/create_lecture.ps1"
-	]
+	}
 }

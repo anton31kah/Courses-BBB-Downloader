@@ -7,9 +7,7 @@ function listenForClicks() {
 			let currentTab = tabs[0];
 			if (validatingRegex.test(currentTab.url)) {
 				let meetingId = meetingIdRegex.exec(currentTab.url)[0];
-				let scriptUrl = browser.runtime.getURL("resources/create_lecture.ps1");
-
-				document.getElementById("here").innerText = scriptUrl;
+				let scriptUrl = "https://raw.githubusercontent.com/anton31kah/Courses-BBB-Downloader/master/resources/create_lecture.ps1";
 
 				let downloadSelection = {
 					meetingId, scriptUrl

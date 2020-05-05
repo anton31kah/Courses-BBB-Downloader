@@ -96,27 +96,9 @@
 		});
 	}
 
-	function readFile(_path) {
-		return new Promise((resolve, reject) => {
-			fetch(_path, { mode: 'same-origin' })
-				.then(function (_res) {
-					return _res.blob();
-				})
-				.then(function (_blob) {
-					resolve(_blob);
-					// var reader = new FileReader();
-
-					// reader.addEventListener("loadend", function () {
-					// 	resolve(this.result);
-					// });
-
-					// reader.readAsText(_blob);
-				})
-				.catch(error => {
-					reject(error);
-				});
-		});
-	};
+	function urlTextContent(url) {
+		return fetch(url).then(data => data.text());
+	}
 
 	function handleDownloadProcess(downloadSelection) {
 		let downloadQueue = fetchDownloadItems(downloadSelection);
@@ -125,7 +107,7 @@
 
 		let zip = new JSZip();
 
-		zip.file('create_lecture.ps1', readFile(downloadQueue.scriptUrl), {binary: true})
+		zip.file('create_lecture.ps1', urlTextContent(downloadSelection.scriptUrl), {binary: true})
 
 		if (downloadQueue.video) {
 			zip.file('video.webm', urlToPromise(downloadQueue.video), { binary: true });
