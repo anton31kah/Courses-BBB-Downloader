@@ -51,7 +51,7 @@ if ($slidesAndAudio) {
 		$slide = $tuple.Item2
 		$slideVideoName = $slide.Replace("png", "mp4")
 		Add-Content -Path "slides.txt" -Value "file $slideVideoName"
-		ffmpeg -loop 1 -i $slide -t $duration $slideVideoName
+		ffmpeg -loop 1 -framerate 1 -i $slide -t $duration $slideVideoName
 	}
 
 	ffmpeg -f concat -i .\slides.txt slides.mp4
