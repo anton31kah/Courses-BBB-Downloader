@@ -36,52 +36,84 @@
 	}
 
 	function prepareDownloadProgress() {
-		let downloadStatus = $('body > #download-status');
+		let downloadStatus = document.querySelector('body > #cbd-download-status');
 
-		if (downloadStatus.length === 1) {
-			downloadStatus.remove();
+		if (downloadStatus) {
+			downloadStatus.parentNode.removeChild(downloadStatus);
 		}
 
-		$('body').prepend(`
-			<div id="download-status">
-				<div class="progress hide" id="progress_bar">
-					<div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-				</div>
+		let parentBody = document.querySelector('body');
 
-				<p class="" id="result">Download process will start soon!</p>
-			</div>
-			`);
+		let downloadStatusDivElement = document.createElement('div');
+		downloadStatusDivElement.id = "cbd-download-status";
 
-		downloadStatus = $('body > #download-status');
+		let progressBarParentDivElement = document.createElement('div');
+		progressBarParentDivElement.id = "cbd-progress-bar";
+		progressBarParentDivElement.classList.add("cbd-progress");
+		progressBarParentDivElement.classList.add("cbd-hide");
+
+		let progressBarElement = document.createElement('div');
+		progressBarElement.classList.add("cbd-progress-bar");
+
+		let resultStatusElement = document.createElement('p');
+		resultStatusElement.id = "cbd-result";
+		resultStatusElement.textContent = "Download process will start soon!";
+
+
+		progressBarParentDivElement.appendChild(progressBarElement);
+
+		downloadStatusDivElement.appendChild(progressBarParentDivElement);
+		downloadStatusDivElement.appendChild(resultStatusElement);
+
+
+		parentBody.insertBefore(downloadStatusDivElement, parentBody.firstChild);
+
+		downloadStatus = downloadStatusDivElement;
 	}
 
 	function resetMessage() {
-		$("#result")
-			.removeClass()
-			.text("");
+		let resultElement = document.getElementById("cbd-result");
+		resultElement.classList.remove(...resultElement.classList);
+		resultElement.textContent = "";
 	}
 
 	function showMessage(text) {
 		resetMessage();
-		$("#result")
-			.addClass("alert alert-success")
-			.text(text);
+		let resultElement = document.getElementById("cbd-result");
+		resultElement.classList.add("cbd-alert", "cbd-alert-success");
+		resultElement.textContent = text;
+	}
+
+	function showFinalMessage(text) {
+		resetMessage();
+		let resultElement = document.getElementById("cbd-result");
+		resultElement.classList.add("cbd-alert", "cbd-alert-success");
+
+		let linkElement = document.createElement('a');
+		linkElement.id = "cbd-clear-progress";
+		linkElement.textContent = text + " click here to close progress.";
+
+		linkElement.addEventListener('click', () => {
+			let toDelete = document.getElementById('cbd-download-status');
+			toDelete.parentNode.removeChild(toDelete);
+		});
+
+		resultElement.appendChild(linkElement);
 	}
 
 	function showError(text) {
 		resetMessage();
-		$("#result")
-			.addClass("alert alert-danger")
-			.text(text);
+		let resultElement = document.getElementById("cbd-result");
+		resultElement.classList.add("cbd-alert", "cbd-alert-danger");
+		resultElement.textContent = text;
 	}
 
 	function updatePercent(percent) {
-		$("#progress_bar").removeClass("hide")
-			.find(".progress-bar")
-			.attr("aria-valuenow", percent)
-			.css({
-				width: percent + "%"
-			});
+		let progressBarParentElement = document.getElementById("cbd-progress-bar");
+		progressBarParentElement.classList.remove("cbd-hide");
+		let progressBarElement = progressBarParentElement.getElementsByClassName("cbd-progress-bar")[0];
+		// progressBarElement.setAttribute("aria-valuenow", percent);
+		progressBarElement.style.width = percent + "%";
 	}
 
 	function urlToPromise(url) {
@@ -107,7 +139,7 @@
 
 		let zip = new JSZip();
 
-		zip.file('create_lecture.ps1', urlTextContent(downloadSelection.scriptUrl), {binary: true})
+		zip.file('create_lecture.ps1', urlTextContent(downloadSelection.scriptUrl), { binary: true })
 
 		if (downloadQueue.video) {
 			zip.file('video.webm', urlToPromise(downloadQueue.video), { binary: true });
@@ -137,11 +169,11 @@
 			updatePercent(metadata.percent | 0);
 		})
 			.then(blob => {
-				let lectureTitle = $('#recording-title').text();
+				let lectureTitle = document.getElementById("recording-title").textContent;
 				let meetingId = downloadSelection.meetingId;
 				let fileName = `${lectureTitle}-${meetingId}.zip`;
 				saveAs(blob, fileName);
-				showMessage("done !");
+				showFinalMessage("done !");
 			}, e => {
 				showError(e);
 			});

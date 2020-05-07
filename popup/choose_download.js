@@ -1,34 +1,47 @@
+function isUrlValid(url) {
+	const validatingRegex = /https?:\/\/bbb(-\w+)?\.finki\.ukim\.mk\/playback\/presentation\/2\.0\/playback\.html\?meetingId=\w{40}-\w{13}/;
+
+	return validatingRegex.test(url)
+}
+
+function consoleLog(text) {
+	browser.tabs.executeScript({ code: `console.log(${JSON.stringify(text)});` });
+}
+
+function consoleError(text) {
+	browser.tabs.executeScript({ code: `console.error(${JSON.stringify(text)});` });
+}
+
 function listenForClicks() {
 	document.addEventListener("click", (e) => {
 
 		function download(tabs, preselect = undefined) {
-			const validatingRegex = /https?:\/\/bbb(-\w+)?\.finki\.ukim\.mk\/playback\/presentation\/2\.0\/playback\.html\?meetingId=\w{40}-\w{13}/;
-			const meetingIdRegex = /meetingId=(\w+-\w+)/;
 			let currentTab = tabs[0];
-			if (validatingRegex.test(currentTab.url)) {
-				let meetingId = meetingIdRegex.exec(currentTab.url)[0];
-				let scriptUrl = "https://raw.githubusercontent.com/anton31kah/Courses-BBB-Downloader/master/resources/create_lecture.ps1";
 
-				let downloadSelection = {
-					meetingId, scriptUrl
-				};
-				let checkboxs = document.querySelectorAll("input[type=checkbox]");
+			const meetingIdRegex = /meetingId=(\w+-\w+)/;
 
-				for (const checkbox of checkboxs) {
-					if (preselect === undefined) {
-						downloadSelection[checkbox.name] = checkbox.checked;
-					} else {
-						downloadSelection[checkbox.name] = preselect.includes(checkbox.name);
-					}
+			let meetingId = meetingIdRegex.exec(currentTab.url)[0];
+
+			let scriptUrl = "https://raw.githubusercontent.com/anton31kah/Courses-BBB-Downloader/master/resources/create_lecture.ps1";
+
+			let downloadSelection = {
+				meetingId, scriptUrl
+			};
+
+			let checkboxes = document.querySelectorAll("input[type=checkbox]");
+
+			for (const checkbox of checkboxes) {
+				if (preselect === undefined) {
+					downloadSelection[checkbox.name] = checkbox.checked;
+				} else {
+					downloadSelection[checkbox.name] = preselect.includes(checkbox.name);
 				}
-
-				browser.tabs.sendMessage(currentTab.id, {
-					command: "download-bbb",
-					downloadSelection: downloadSelection
-				})
-			} else {
-				Promise.reject('Invalid url');
 			}
+
+			browser.tabs.sendMessage(currentTab.id, {
+				command: "download-bbb",
+				downloadSelection: downloadSelection
+			})
 		}
 
 		function downloadSlidesAndAudio(tabs) {
@@ -40,33 +53,34 @@ function listenForClicks() {
 		}
 
 		function reportError(error) {
-			console.error(`Could not beastify: ${error}`);
+			consoleError(`Courses-BBB-Downloader Error: ${error}`);
 		}
 
-		let operationPromise = browser.tabs.query({ active: true, currentWindow: true });
-		if (e.target.classList.contains("download-selected")) {
-			operationPromise = operationPromise
-				.then(download);
-		} else if (e.target.classList.contains("download-slides-audio")) {
-			operationPromise = operationPromise
-				.then(downloadSlidesAndAudio);
-		} else if (e.target.classList.contains("download-video-audio")) {
-			operationPromise = operationPromise
-				.then(downloadVideoAndAudio);
+		let activeTabs = browser.tabs.query({ active: true, currentWindow: true });
+		let classes = e.target.classList;
+
+		if (classes.contains("download-selected")) {
+			activeTabs = activeTabs.then(download);
+		} else if (classes.contains("download-slides-audio")) {
+			activeTabs = activeTabs.then(downloadSlidesAndAudio);
+		} else if (classes.contains("download-video-audio")) {
+			activeTabs = activeTabs.then(downloadVideoAndAudio);
 		}
-		operationPromise = operationPromise.catch(reportError);
+
+		activeTabs = activeTabs.catch(reportError);
 	});
 }
 
 function reportExecuteScriptError(error) {
 	document.querySelector("#popup-content").classList.add("hidden");
 	document.querySelector("#error-content").classList.remove("hidden");
-	console.error(`Failed to execute beastify content script: ${error.message}`);
+	document.querySelector("#error-content > p").textContent = error.message;
+	consoleError(`Failed to execute downloader content script: ${JSON.stringify(error)}`);
 }
 
 function loadScripts(scripts) {
 	if (scripts.length < 1) {
-		browser.tabs.executeScript({ code: `console.error("INVALID SCRIPTS");` });
+		consoleError("INVALID SCRIPTS");
 		return Promise.reject("INVALID SCRIPTS");
 	}
 
@@ -86,14 +100,21 @@ function loadScripts(scripts) {
 	return mainPromise;
 }
 
-loadScripts([
-	"/external_dependencies/jquery/jquery-3.5.0.min.js",
-	"/external_dependencies/bootstrap/bootstrap.min.css",
-	"/external_dependencies/bootstrap/bootstrap.min.js",
-	"/external_dependencies/filesaver/FileSaver.min.js",
-	"/external_dependencies/jszip/jszip-utils.min.js",
-	"/external_dependencies/jszip/jszip.min.js",
-	"/content_scripts/downloader.js"
-])
+browser.tabs.query({ active: true, currentWindow: true })
+	.then(tabs => {
+		let currentTab = tabs[0];
+		if (!isUrlValid(currentTab.url)) {
+			throw {
+				message: "Invalid tab url"
+			};
+		}
+	})
+	.then(() => loadScripts([
+		"/external_dependencies/filesaver/FileSaver.min.js",
+		"/external_dependencies/jszip/jszip-utils.min.js",
+		"/external_dependencies/jszip/jszip.min.js",
+		"/content_scripts/progress_bar.css",
+		"/content_scripts/downloader.js"
+	]))
 	.then(listenForClicks)
 	.catch(reportExecuteScriptError);
