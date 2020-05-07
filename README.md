@@ -21,8 +21,7 @@
 - Explanation:
 	- `-videoAndAudio`: merges the video with the audio. Use this option when downloading a lecture that used screen recording/sharing.
 	- `-slidesAndAudio`: creates a video from the slides with the correct lengths, then merges it with the audio. Use this option when downloading a lecture that used the typical presentations).
-		- Note: this option is very slow (it took me an hour and a half to process a 90 minute lecture)
-		- If you have any idea how to speed this up, please share it with me, either through an issue, contacting me privately, or even doing yourself in a pull request, I'll gladly test it and merge it.
+		- Note: for a 90 minute lecture `-videoAndAudio` takes around 2-3 minutes while `-slidesAndAudio` takes around 5-6 minutes.
 	- One of the previous two options is mandatory, both are not allowed at the same time.
 	- `-deleteRest`: optional. Deletes the other unnecessary files except for the script, you'll have to delete that one on your own.
 
