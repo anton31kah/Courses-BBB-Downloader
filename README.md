@@ -27,7 +27,9 @@
 	- `-deleteRest`: optional. Deletes the other unnecessary files except for the script, you'll have to delete that one on your own.
 
 ## Download
-- For Firefox you can download the extension from [the releases page](https://github.com/anton31kah/Courses-BBB-Downloader/releases/download/v1.0/courses_bbb_downloader-1.0-fx.xpi).
+- For Firefox you can download the extension from [the releases page](https://github.com/anton31kah/Courses-BBB-Downloader/releases/latest).
+- Note that the extension won't appear in pages which aren't the BBB recording page.
+	![Preview](https://github.com/anton31kah/Courses-BBB-Downloader/blob/master/screenshots/extension_preview.jpg "Preview")
 
 ## FFmpeg
 - The project uses ffmpeg and ffprobe which you can download from [the official page](https://www.ffmpeg.org/download.html).
