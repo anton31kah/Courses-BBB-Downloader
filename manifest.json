@@ -1,7 +1,7 @@
 {
 	"manifest_version": 2,
 	"name": "Courses BBB Downloader",
-	"version": "1.2",
+	"version": "1.3",
 	"description": "Allows downloading lectures from Courses BBB at FINKI",
 	"homepage_url": "https://anton31kah.github.io/",
 	"icons": {

@@ -19,6 +19,14 @@
 	transition: width .6s ease;
 }
 
+.cbd-progress-text {
+	position: absolute;
+	color: white;
+	text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+	left: 50%;
+    transform: translate(-50%, 0);
+}
+
 .cbd-hide {
 	display: none !important;
 }
