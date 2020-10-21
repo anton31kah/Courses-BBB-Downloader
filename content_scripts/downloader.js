@@ -60,12 +60,6 @@
             saveAs(downloadItem, "create_lecture.ps1");
         }
 
-        /*
-        Idea is:
-          from choose_download.js send event to downloader.js on a different listener to check if video is available
-          based on that -> allow button for video
-         */
-
         if (downloadSelection === "video") {
             console.log(`Will download ${downloadItem}`);
             saveAs(downloadItem, "video.webm");
