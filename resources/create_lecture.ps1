@@ -1,26 +1,40 @@
 [CmdletBinding()]
 Param (
-	[Parameter(Mandatory = $true, ParameterSetName = 'Slides')]
+	[Parameter(Mandatory = $true, ParameterSetName = "Slides")]
 	[switch]
 	$slidesAndAudio,
 
-	[Parameter(Mandatory = $true, ParameterSetName = 'Video')]
+	[Parameter(Mandatory = $true, ParameterSetName = "Video")]
 	[switch]
 	$videoAndAudio,
+
+	[Parameter(Mandatory = $true, ParameterSetName = "Clean")]
+	[switch]
+	$cleanUp,
 
 	[Parameter()]
 	[switch]
 	$deleteRest = $false
 )
 
+[Environment]::CurrentDirectory = (Get-Location -PSProvider FileSystem).ProviderPath
+
 if ($slidesAndAudio) {
-	$missingFiles = (-Not [System.IO.File]::Exists('audio.webm')) -or
-					(-Not [System.IO.File]::Exists('slides-times.txt')) -or
-					(-Not [System.IO.Directory]::Exists('slides'))
+	$missingFiles = (-Not [System.IO.File]::Exists("audio.webm")) -or
+					(-Not [System.IO.File]::Exists("slides.zip"))
 
 	if ($missingFiles) {
-		throw "Not all needed files are here (audio.webm, slides-times.txt, slides/)"
+		throw "Not all needed files are here (audio.webm, slides.zip)"
 	}
+
+	Expand-Archive .\slides.zip -DestinationPath .
+
+	$missingFiles = (-Not [System.IO.Directory]::Exists("slides")) -or
+                    (-Not [System.IO.File]::Exists("slides-times.txt"))
+
+    if ($missingFiles) {
+        throw "Not all needed files are here (slides, slides-times.txt)"
+    }
 
 	$res = ffprobe -i .\audio.webm -show_format -v quiet | Select-String -Pattern duration
 	$maxDuration = [double]::Parse($res.Line.Split("=")[1])
@@ -60,8 +74,8 @@ if ($slidesAndAudio) {
 }
 
 if ($videoAndAudio) {
-	$missingFiles = (-Not [System.IO.File]::Exists('audio.webm')) -or
-					(-Not [System.IO.File]::Exists('video.webm'))
+	$missingFiles = (-Not [System.IO.File]::Exists("audio.webm")) -or
+					(-Not [System.IO.File]::Exists("video.webm"))
 
 	if ($missingFiles) {
 		throw "Not all needed files are here (audio.webm, video.webm)"
@@ -70,7 +84,7 @@ if ($videoAndAudio) {
 	ffmpeg -i video.webm -i audio.webm -c:v copy -map 0:v:0 -map 1:a:0 whole.mp4
 }
 
-if ($deleteRest) {
-	$filesToDelete = ('slides', 'audio.webm', 'slides.mp4', 'slides.txt', 'slides-times.txt', 'video.webm')
+if ($cleanUp -or $deleteRest) {
+	$filesToDelete = ("slides", "audio.webm", "slides.mp4", "slides.txt", "slides-times.txt", "slides.zip", "video.webm")
 	Remove-Item $filesToDelete -Recurse -ErrorAction Ignore
 }

@@ -1,23 +1,37 @@
 html, body {
-  width: 120px;
+    width: 120px;
+}
+
+#popup-content {
+    display: grid;
 }
 
 .hidden {
-  display: none;
+    display: none;
 }
 
 .button {
-  margin: 3% auto;
-  padding: 4px;
-  text-align: center;
-  font-size: 1em;
-  cursor: pointer;
+    width: 95%;
+    margin: 3% auto;
+    padding: 4px;
+    text-align: center;
+    font-size: 1em;
+    cursor: pointer;
 }
 
 .download:hover {
-  background-color: #CFF2F2;
+    background-color: #CFF2F2;
 }
 
 .download {
-  background-color: #E5F2F2;
+    background-color: #E5F2F2;
+}
+
+.note {
+    width: 95%;
+    text-align: center;
+}
+
+hr {
+    width: 95%;
 }

@@ -1,232 +1,123 @@
 (function () {
-	if (window.hasRun) {
-		return;
-	}
-	window.hasRun = true;
+    if (window.hasRun) {
+        return;
+    }
+    window.hasRun = true;
 
+    const scriptUrl = "https://raw.githubusercontent.com/anton31kah/Courses-BBB-Downloader/master/resources/create_lecture.ps1";
 
-	function fetchDownloadItems(downloadSelection) {
-		let urlsToDownload = {};
+    function fetchDownloadItems(downloadSelection) {
+        if (downloadSelection === "script") {
+            return scriptUrl;
+        }
 
-		let [video, audio] = document.querySelectorAll("source[src$=webm]");
-		let slides = document.getElementsByClassName("slide");
-		if (downloadSelection.audio) {
-			let audioUrl = audio.src;
-			urlsToDownload.audio = audioUrl;
-		}
-		if (downloadSelection.video) {
-			let videoUrl = video.src;
-			urlsToDownload.video = videoUrl;
-		}
-		if (downloadSelection.slides) {
-			urlsToDownload.slides = [];
-			for (const slide of slides) {
-				let start = parseFloat(slide.getAttribute("in"));
-				let end = parseFloat(slide.getAttribute("out"));
-				let slideUrl = `${window.location.protocol}//${window.location.host}${slide.href.baseVal}`;
-				urlsToDownload.slides.push({
-					url: slideUrl,
-					start: start,
-					end: end
-				});
-			}
-		}
+        if (downloadSelection === "audio") {
+            const audioElement = document.querySelector("source[src$='webcams.webm']");
+            return audioElement?.src;
+        }
 
-		return urlsToDownload;
-	}
+        if (downloadSelection === "video") {
+            const videoElement = document.querySelector("source[src$='deskshare.webm']");
+            return videoElement?.src
+        }
 
-	function createProgressBar(file) {
-		let downloadStatusDivElement = document.getElementById('cbd-download-status');
+        if (downloadSelection === "slides") {
+            let slidesElements = document.getElementsByClassName("slide");
+            const slides = [];
+            for (const slideElement of slidesElements) {
+                let start = parseFloat(slideElement.getAttribute("in"));
+                let end = parseFloat(slideElement.getAttribute("out"));
+                let slideUrl = `${window.location.protocol}//${window.location.host}${slideElement.href.baseVal}`;
+                slides.push({
+                    url: slideUrl,
+                    start: start,
+                    end: end
+                });
+            }
+            return slides;
+        }
+    }
 
-		let progressBarParentDivElement = document.createElement('div');
-		progressBarParentDivElement.id = `cbd-progress-bar-${file}`;
-		progressBarParentDivElement.classList.add("cbd-progress");
+    function urlToPromise(url) {
+        return new Promise((resolve, reject) =>
+            JSZipUtils.getBinaryContent(url, {
+                callback: (err, data) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve(data);
+                    }
+                }
+            })
+        );
+    }
 
-		let progressBarElement = document.createElement('div');
-		progressBarElement.classList.add("cbd-progress-bar");
+    function handleDownloadProcess(downloadSelection) {
+        let downloadItem = fetchDownloadItems(downloadSelection);
 
-		let progressTextElement = document.createElement('div');
-		progressTextElement.classList.add("cbd-progress-text");
+        if (downloadSelection === "script") {
+            console.log(`Will download ${downloadItem}`);
+            saveAs(downloadItem, "create_lecture.ps1");
+        }
 
-		progressBarParentDivElement.appendChild(progressBarElement);
-		progressBarParentDivElement.appendChild(progressTextElement);
+        /*
+        Idea is:
+          from choose_download.js send event to downloader.js on a different listener to check if video is available
+          based on that -> allow button for video
+         */
 
+        if (downloadSelection === "video") {
+            console.log(`Will download ${downloadItem}`);
+            saveAs(downloadItem, "video.webm");
+        }
 
-		let resultStatusElement = document.getElementById('cbd-result');
+        if (downloadSelection === "audio") {
+            console.log(`Will download ${downloadItem}`);
+            saveAs(downloadItem, "audio.webm");
+        }
 
-		downloadStatusDivElement.insertBefore(progressBarParentDivElement, resultStatusElement);
-	}
+        if (downloadSelection === "slides") {
+            let zip = new JSZip();
+            let slidesFolder = zip.folder("slides");
+            let timesFileContent = [];
+            for (const [index, slide] of downloadItem.entries()) {
+                slidesFolder.file(`slide-${index}.png`, urlToPromise(slide.url), {binary: true});
+                timesFileContent.push(`${slide.start}-${slide.end}`);
+            }
+            timesFileContent = timesFileContent.join("\n");
+            zip.file("slides-times.txt", timesFileContent);
+            zip.generateAsync({type: "blob"})
+                .then(blob => saveAs(blob, "slides.zip"));
+        }
+    }
 
-	function prepareDownloadProgress() {
-		let downloadStatus = document.querySelector('body > #cbd-download-status');
+    function checkExists(elementName) {
+        if (elementName === "script") {
+            return true;
+        }
 
-		if (downloadStatus) {
-			downloadStatus.parentNode.removeChild(downloadStatus);
-		}
+        if (elementName === "audio") {
+            const audioElement = document.querySelector("source[src$='webcams.webm']");
+            return audioElement !== null;
+        }
 
-		let parentBody = document.querySelector('body');
+        if (elementName === "video") {
+            const videoElement = document.querySelector("source[src$='deskshare.webm']");
+            return videoElement !== null;
+        }
 
-		let downloadStatusDivElement = document.createElement('div');
-		downloadStatusDivElement.id = "cbd-download-status";
+        if (elementName === "slides") {
+            const slidesElements = document.getElementsByClassName("slide");
+            return slidesElements.length > 0;
+        }
+    }
 
-		let resultStatusElement = document.createElement('p');
-		resultStatusElement.id = "cbd-result";
-		resultStatusElement.textContent = "Download process will start soon!";
-
-
-		downloadStatusDivElement.appendChild(resultStatusElement);
-
-
-		parentBody.insertBefore(downloadStatusDivElement, parentBody.firstChild);
-
-		downloadStatus = downloadStatusDivElement;
-	}
-
-	function resetMessage() {
-		let resultElement = document.getElementById("cbd-result");
-		resultElement.classList.remove(...resultElement.classList);
-		resultElement.textContent = "";
-	}
-
-	function showMessage(text) {
-		resetMessage();
-		let resultElement = document.getElementById("cbd-result");
-		resultElement.classList.add("cbd-alert", "cbd-alert-success");
-		resultElement.textContent = text;
-		resultElement.title = "If it seems slow or that it stopped, please be patient, trust me, it's working. It didn't stop, neither did it break, it just doesn't send enough notifications so this message can be updated correctly.";
-	}
-
-	function showFinalMessage(text) {
-		resetMessage();
-		let resultElement = document.getElementById("cbd-result");
-		resultElement.classList.add("cbd-alert", "cbd-alert-success");
-
-		let linkElement = document.createElement('a');
-		linkElement.id = "cbd-clear-progress";
-		linkElement.textContent = text + " click here to close progress.";
-
-		linkElement.addEventListener('click', () => {
-			let toDelete = document.getElementById('cbd-download-status');
-			toDelete.parentNode.removeChild(toDelete);
-		});
-
-		resultElement.appendChild(linkElement);
-	}
-
-	function showError(text) {
-		resetMessage();
-		let resultElement = document.getElementById("cbd-result");
-		resultElement.classList.add("cbd-alert", "cbd-alert-danger");
-		resultElement.textContent = text;
-	}
-
-	function updatePercent(percent, file) {
-		let progressBarParentElement = document.getElementById(`cbd-progress-bar-${file}`);
-		let progressBarElement = progressBarParentElement.getElementsByClassName("cbd-progress-bar")[0];
-		let progressTextElement = progressBarParentElement.getElementsByClassName("cbd-progress-text")[0];
-		progressBarElement.style.width = percent + "%";
-		progressTextElement.textContent = `${percent.toFixed(2)}% ${file}`;
-
-		if (percent >= 100) {
-			let linkElement = document.createElement('a');
-			linkElement.id = `cbd-clear-progress-${file}`;
-			linkElement.textContent = " click here to close progress bar.";
-			linkElement.setAttribute("style", "color: red;");
-
-			linkElement.addEventListener('click', () => {
-				progressBarParentElement.parentNode.removeChild(progressBarParentElement);
-			});
-
-			progressTextElement.appendChild(linkElement);
-		}
-	}
-
-	function urlToPromise(url, progress_callback) {
-		return new Promise(function (resolve, reject) {
-			JSZipUtils.getBinaryContent(url, {
-				callback: function (err, data) {
-					if (err) {
-						reject(err);
-					} else {
-						resolve(data);
-					}
-				},
-				progress: progress_callback
-			});
-		});
-	}
-
-	function progressClosure(file) {
-		const progressDownload = file => metadata => {
-			let percent = metadata.percent;
-			if (isNaN(percent)) {
-				percent = 0;
-			}
-			updatePercent(percent, file);
-		};
-
-		return progressDownload(file);
-	}
-
-	function urlTextContent(url) {
-		return fetch(url).then(data => data.text());
-	}
-
-	function handleDownloadProcess(downloadSelection) {
-		let downloadQueue = fetchDownloadItems(downloadSelection);
-
-		prepareDownloadProgress();
-
-		let zip = new JSZip();
-
-		zip.file('create_lecture.ps1', urlTextContent(downloadSelection.scriptUrl), { binary: true })
-
-		if (downloadQueue.video) {
-			createProgressBar("video");
-			const progress_callback = progressClosure("video");
-			zip.file('video.webm', urlToPromise(downloadQueue.video, progress_callback), { binary: true });
-		}
-
-		if (downloadQueue.audio) {
-			createProgressBar("audio");
-			const progress_callback = progressClosure("audio");
-			zip.file('audio.webm', urlToPromise(downloadQueue.audio, progress_callback), { binary: true });
-		}
-
-		if (downloadQueue.slides) {
-			let slidesFolder = zip.folder('slides');
-			let timesFileContent = [];
-			for (const [index, slide] of downloadQueue.slides.entries()) {
-				createProgressBar(`slide-${index}`);
-				const progress_callback = progressClosure(`slide-${index}`);
-				slidesFolder.file(`slide-${index}.png`, urlToPromise(slide.url, progress_callback), { binary: true });
-				timesFileContent.push(`${slide.start}-${slide.end}`);
-			}
-			timesFileContent = timesFileContent.join('\n');
-			zip.file('slides-times.txt', timesFileContent);
-		}
-
-		zip.generateAsync({ type: "blob" }, metadata => {
-			let msg = "progression : " + metadata.percent.toFixed(2) + " %";
-			if (metadata.currentFile) {
-				msg += ", current file = " + metadata.currentFile;
-			}
-			showMessage(msg);
-		})
-			.then(blob => {
-				let lectureTitle = document.getElementById("recording-title").textContent;
-				let meetingId = downloadSelection.meetingId;
-				let fileName = `${lectureTitle}-${meetingId}.zip`;
-				saveAs(blob, fileName);
-				showFinalMessage("done !");
-			}, e => {
-				showError(e);
-			});
-	}
-
-	browser.runtime.onMessage.addListener((message) => {
-		if (message.command === "download-bbb") {
-			handleDownloadProcess(message.downloadSelection);
-		}
-	});
+    browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.command === "cbd-download-bbb") {
+            handleDownloadProcess(message.downloadSelection);
+        }
+        if (message.command === "cdb-check-exists") {
+            sendResponse(checkExists(message.elementToCheck));
+        }
+    });
 })();

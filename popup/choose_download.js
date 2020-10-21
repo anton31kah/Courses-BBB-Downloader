@@ -1,120 +1,103 @@
 function isUrlValid(url) {
-	const validatingRegex = /https?:\/\/bbb(-\w+)?\.finki\.ukim\.mk\/playback\/presentation\/2\.0\/playback\.html\?meetingId=\w{40}-\w{13}/;
+    const validatingRegex = /https?:\/\/bbb(-\w+)?\.finki\.ukim\.mk\/playback\/presentation\/2\.0\/playback\.html\?meetingId=\w{40}-\w{13}/;
 
-	return validatingRegex.test(url)
+    return validatingRegex.test(url)
 }
 
 function consoleLog(text) {
-	browser.tabs.executeScript({ code: `console.log(${JSON.stringify(text)});` });
+    return browser.tabs.executeScript({code: `console.log(${JSON.stringify(text)});`});
 }
 
 function consoleError(text) {
-	browser.tabs.executeScript({ code: `console.error(${JSON.stringify(text)});` });
+    return browser.tabs.executeScript({code: `console.error(${JSON.stringify(text)});`});
 }
 
 function listenForClicks() {
-	document.addEventListener("click", (e) => {
+    document.addEventListener("click", (e) => {
 
-		function download(tabs, preselect = undefined) {
-			let currentTab = tabs[0];
+        function download(tabs, chosenItem) {
+            let currentTab = tabs[0];
 
-			const meetingIdRegex = /meetingId=(\w+-\w+)/;
+            browser.tabs.sendMessage(currentTab.id, {
+                command: "cbd-download-bbb",
+                downloadSelection: chosenItem
+            })
+        }
 
-			let meetingId = meetingIdRegex.exec(currentTab.url)[0];
+        function reportError(error) {
+            consoleError(`Courses-BBB-Downloader Error: ${error}`);
+        }
 
-			let scriptUrl = "https://raw.githubusercontent.com/anton31kah/Courses-BBB-Downloader/master/resources/create_lecture.ps1";
+        browser.tabs.query({active: true, currentWindow: true})
+            .then(activeTabs => download(activeTabs, e.target.id))
+            .catch(reportError);
+    });
+}
 
-			let downloadSelection = {
-				meetingId, scriptUrl
-			};
+function determineElementsToShow() {
+    function checkIfExists(tabs, buttonElement) {
+        let currentTab = tabs[0];
 
-			let checkboxes = document.querySelectorAll("input[type=checkbox]");
+        return browser.tabs.sendMessage(currentTab.id, {
+            command: "cdb-check-exists",
+            elementToCheck: buttonElement.name
+        }).then(shouldShow => {
+            buttonElement.style.display = shouldShow ? "" : "none";
+        });
+    }
 
-			for (const checkbox of checkboxes) {
-				if (preselect === undefined) {
-					downloadSelection[checkbox.name] = checkbox.checked;
-				} else {
-					downloadSelection[checkbox.name] = preselect.includes(checkbox.name);
-				}
-			}
-
-			browser.tabs.sendMessage(currentTab.id, {
-				command: "download-bbb",
-				downloadSelection: downloadSelection
-			})
-		}
-
-		function downloadSlidesAndAudio(tabs) {
-			return download(tabs, ["slides", "audio"])
-		}
-
-		function downloadVideoAndAudio(tabs) {
-			return download(tabs, ["video", "audio"])
-		}
-
-		function reportError(error) {
-			consoleError(`Courses-BBB-Downloader Error: ${error}`);
-		}
-
-		let activeTabs = browser.tabs.query({ active: true, currentWindow: true });
-		let classes = e.target.classList;
-
-		if (classes.contains("download-selected")) {
-			activeTabs = activeTabs.then(download);
-		} else if (classes.contains("download-slides-audio")) {
-			activeTabs = activeTabs.then(downloadSlidesAndAudio);
-		} else if (classes.contains("download-video-audio")) {
-			activeTabs = activeTabs.then(downloadVideoAndAudio);
-		}
-
-		activeTabs = activeTabs.catch(reportError);
-	});
+    const buttons = document.getElementsByTagName("button");
+    for (let button of buttons) {
+        browser.tabs.query({active: true, currentWindow: true})
+            .then(activeTabs => checkIfExists(activeTabs, button))
+            .catch(error => consoleError(`Courses-BBB-Downloader Error: ${error}`));
+    }
 }
 
 function reportExecuteScriptError(error) {
-	document.querySelector("#popup-content").classList.add("hidden");
-	document.querySelector("#error-content").classList.remove("hidden");
-	document.querySelector("#error-content > p").textContent = error.message;
-	consoleError(`Failed to execute downloader content script: ${JSON.stringify(error)}`);
+    document.querySelector("#popup-content").classList.add("hidden");
+    document.querySelector("#error-content").classList.remove("hidden");
+    document.querySelector("#error-content > p").textContent = error.message;
+    consoleError(`Failed to execute downloader content script: ${JSON.stringify(error)}`);
 }
 
 function loadScripts(scripts) {
-	if (scripts.length < 1) {
-		consoleError("INVALID SCRIPTS");
-		return Promise.reject("INVALID SCRIPTS");
-	}
+    if (scripts.length < 1) {
+        consoleError("INVALID SCRIPTS");
+        return Promise.reject("INVALID SCRIPTS");
+    }
 
-	const getScript = (script) => {
-		if (script.endsWith('.js'))
-			return browser.tabs.executeScript({ file: script });
-		else
-			return browser.tabs.insertCSS({ file: script });
-	};
+    const getScript = (script) => {
+        if (script.endsWith(".js"))
+            return browser.tabs.executeScript({file: script});
+        else
+            return browser.tabs.insertCSS({file: script});
+    };
 
-	let mainPromise = getScript(scripts[0]);
+    let mainPromise = getScript(scripts[0]);
 
-	for (const script of scripts.slice(1)) {
-		mainPromise = mainPromise.then(r => getScript(script));
-	}
+    for (const script of scripts.slice(1)) {
+        mainPromise = mainPromise.then(() => getScript(script));
+    }
 
-	return mainPromise;
+    return mainPromise;
 }
 
-browser.tabs.query({ active: true, currentWindow: true })
-	.then(tabs => {
-		let currentTab = tabs[0];
-		if (!isUrlValid(currentTab.url)) {
-			throw {
-				message: "Invalid tab url"
-			};
-		}
-	})
-	.then(() => loadScripts([
-		"/external_dependencies/filesaver/FileSaver.min.js",
-		"/external_dependencies/jszip/jszip-utils.min.js",
-		"/external_dependencies/jszip/jszip.min.js",
-		"/content_scripts/progress_bar.css",
-		"/content_scripts/downloader.js"
-	]))
-	.then(listenForClicks)
-	.catch(reportExecuteScriptError);
+browser.tabs.query({active: true, currentWindow: true})
+    .then(tabs => {
+        let currentTab = tabs[0];
+        if (!isUrlValid(currentTab.url)) {
+            throw {
+                message: "Invalid tab url"
+            };
+        }
+    })
+    .then(() => loadScripts([
+        "/external_dependencies/filesaver/FileSaver.min.js",
+        "/external_dependencies/jszip/jszip-utils.min.js",
+        "/external_dependencies/jszip/jszip.min.js",
+        "/content_scripts/downloader.js"
+    ]))
+    .then(listenForClicks)
+    .then(determineElementsToShow)
+    .catch(reportExecuteScriptError);

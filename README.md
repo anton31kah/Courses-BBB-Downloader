@@ -5,11 +5,8 @@
 - You need to have ffmpeg installed and added to path, otherwise you'll only have raw data that you'll have to merge on your own.
 
 ## Usage
-- Simply select what you want to download from the extension popup.
-- Wait for the zip to get ready and then download it.
-- Don't worry, everything is done on your machine inside your browser. If you don't trust me, check the code, it's simple.
-- When downloaded, unzip it anywhere you like.
-- Open powershell inside that directory and type in one the following:
+- Simply download the elements you want to download from the extension popup.
+- Once downloaded, open powershell inside the downloads directory and type in one the following:
 
 	```powershell
 	.\create_lecture.ps1 -videoAndAudio [-deleteRest]
@@ -24,6 +21,11 @@
 		- Note: for a 90 minute lecture `-videoAndAudio` takes around 2-3 minutes while `-slidesAndAudio` takes around 5-6 minutes.
 	- One of the previous two options is mandatory, both are not allowed at the same time.
 	- `-deleteRest`: optional. Deletes the other unnecessary files except for the script, you'll have to delete that one on your own.
+- If you didn't use `-deleteRest` then you can rerun the script which is equivalent to using the `-deleteRest` option:
+    
+    ```powershell
+    .\create_lecture.ps1 -cleanUp
+    ```
 
 ## Download
 - For Firefox you can download the extension from [the releases page](https://github.com/anton31kah/Courses-BBB-Downloader/releases/latest).
